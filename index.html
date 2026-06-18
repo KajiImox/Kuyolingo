@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Kuyolingo</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Classroom Practice Game - VibeLingo</title>
+    <!-- Tailwind CSS for beautiful styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for cartoon icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka and Inter for a friendly, readable classroom look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            overflow: hidden; /* Lock the page body completely from scrolling */
+            height: 100vh;
+            height: 100dvh;
+        }
+        /* Tactile Duolingo style 3D buttons */
+        .btn-3d {
+            transition: all 0.1s ease;
+            transform: translateY(-4px);
+        }
+        .btn-3d:active {
+            transform: translateY(0px);
+            border-bottom-width: 0px !important;
+        }
+        /* Hide native scrollbar handles inside our locked views */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Slide Up animation for feedback drawer (Mobile) */
+        @keyframes slideUp {
+            0% {
+                transform: translateY(100%);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+        .slide-up {
+            animation: slideUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Slide Left animation for feedback drawer (Desktop) */
+        @keyframes slideLeft {
+            0% {
+                transform: translateX(100%);
+            }
+            100% {
+                transform: translateX(0);
+            }
+        }
+        @media (min-width: 768px) {
+            .md\:slide-left {
+                animation: slideLeft 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-center items-center selection:bg-indigo-100 w-full">
+
+    <!-- MAIN GAME FRAME -->
+    <div id="app" class="flex flex-col max-w-lg md:max-w-4xl w-full bg-white shadow-2xl relative overflow-hidden h-[100dvh] md:h-[92vh] md:max-h-[680px] md:rounded-3xl border border-slate-200 transition-all duration-300">
+        
+        <!-- CANVAS CELEBRATION OVERLAY -->
+        <canvas id="celebrationCanvas" class="absolute inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+        <!-- HEADER BAR -->
+        <header class="border-b-2 border-slate-100 px-6 py-4 flex items-center justify-between bg-white z-10 shrink-0">
+            <div class="flex items-center gap-2.5 cursor-pointer" onclick="gameEngine.goToDashboard()">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md border-b-4 border-indigo-800">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <!-- Dynamic Classroom Title loaded from config -->
+                    <h1 id="header-class-title" class="text-lg font-bold text-slate-800 leading-none">Classroom Practice</h1>
+                    <span class="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">@arqueomayagt</span>
+                </div>
+            </div>
+
+            <!-- BILINGUAL LANGUAGE SWAP BUTTON -->
+            <div>
+                <button id="lang-toggle-btn" onclick="gameEngine.toggleLanguage()" class="btn-3d bg-slate-100 hover:bg-slate-150 border-b-4 border border-slate-200/80 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:translate-y-0 active:border-b-0">
+                    <span id="lang-label" class="text-slate-700 font-bold">English</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SCREEN: DASHBOARD -->
+        <div id="screen-dashboard" class="flex-grow flex flex-col md:flex-row justify-between p-6 overflow-hidden gap-6">
+            <!-- SECCIÓN IZQUIERDA (Mascota e Instrucción) -->
+            <div class="text-center py-2 shrink-0 md:w-5/12 md:flex md:flex-col md:justify-center md:items-center">
+                <div class="text-6xl md:text-8xl mb-3 animate-bounce">🦉</div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800">Choose a Lesson!</h2>
+                <p class="text-slate-500 text-sm md:text-base mt-0.5">Select a topic below, then press Start to begin.</p>
+            </div>
+
+            <!-- SECCIÓN DERECHA (Grilla de Lecciones y Acción) -->
+            <div class="flex-grow flex flex-col justify-between overflow-hidden md:w-7/12">
+                <!-- LESSON CARD SELECTOR GRID -->
+                <div id="lessons-grid" class="flex-grow flex flex-col gap-3 py-1 overflow-y-auto no-scrollbar">
+                    <!-- Dynamic Lesson buttons injected here -->
+                </div>
+
+                <!-- DASHBOARD ACTION BAR -->
+                <div id="dashboard-action-bar" class="mt-4 shrink-0">
+                    <button id="start-lesson-btn" disabled onclick="gameEngine.confirmStartLesson()" class="btn-3d w-full bg-slate-200 text-slate-400 border-b-4 border-slate-300 cursor-not-allowed py-4 rounded-2xl font-extrabold shadow-md text-center text-sm select-none transition-all">
+                        Start Lesson
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: GAMEPLAY -->
+        <div id="screen-game" class="hidden flex-grow flex flex-col justify-between p-5 overflow-hidden relative">
+            <!-- GAME STATUS HEADER -->
+            <div class="flex items-center justify-between gap-4 mb-3 shrink-0">
+                <!-- Quit Button -->
+                <button onclick="gameEngine.quitGame()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+                
+                <!-- Progress Bar -->
+                <div class="flex-grow bg-slate-100 h-3.5 rounded-full overflow-hidden border border-slate-200/50">
+                    <div id="game-progress" class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+
+                <!-- Lives Indicator -->
+                <div class="flex items-center gap-1 font-bold text-rose-500" id="lives-container">
+                    <!-- Hearts generated dynamically -->
+                </div>
+            </div>
+
+            <!-- QUESTION CONTAINER (Split into Left/Right adaptive columns) -->
+            <div class="flex-grow flex flex-col md:flex-row gap-6 md:gap-8 overflow-hidden py-1 items-stretch" id="game-question-area">
+                <!-- Columna Izquierda: Pregunta e Imagen principal -->
+                <div id="game-left-col" class="flex flex-col justify-center items-center w-full md:w-1/2 text-center shrink-0"></div>
+                <!-- Columna Derecha: Opciones e Interacciones -->
+                <div id="game-right-col" class="flex flex-col justify-center items-center w-full md:w-1/2"></div>
+            </div>
+
+            <!-- ANSWER BANNER (Appears after checking - Slides up on mobile, and slides horizontally on desktop to cover the right side options) -->
+            <div id="feedback-banner" class="absolute bottom-0 left-0 right-0 h-[58%] md:h-full md:w-1/2 md:left-auto md:right-0 md:rounded-l-[36px] md:rounded-r-none p-6 flex flex-col justify-between gap-4 z-30 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] md:shadow-[-15px_0_50px_rgba(0,0,0,0.15)] border-t-4 md:border-t-0 md:border-l-4 hidden">
+                <!-- Centered result details -->
+                <div class="flex flex-col items-center justify-center text-center gap-3.5 my-auto">
+                    <div id="feedback-icon" class="w-20 h-20 rounded-full flex items-center justify-center text-3xl shadow-lg shrink-0 mx-auto"></div>
+                    <div>
+                        <h4 id="feedback-title" class="font-extrabold text-2xl leading-none">Correct!</h4>
+                        <p id="feedback-desc" class="text-sm opacity-90 mt-1.5 max-w-xs mx-auto font-medium"></p>
+                    </div>
+                </div>
+                <!-- Action bottom button -->
+                <button id="feedback-btn" class="btn-3d w-full py-4 rounded-2xl font-extrabold shadow-md text-center select-none text-base transition-all shrink-0">
+                    Continue
+                </button>
+            </div>
+
+            <!-- CHECK ACTION BAR (Before answering - Hides to invisible to lock page layout strictly) -->
+            <div id="action-banner" class="mt-4 flex gap-3 shrink-0">
+                <button id="check-btn" disabled onclick="gameEngine.checkAnswer()" class="btn-3d w-full bg-slate-200 text-slate-400 border-b-4 border-slate-300 cursor-not-allowed py-3.5 rounded-xl font-extrabold shadow-md text-center text-sm select-none transition-all">
+                    Check Answer
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN: RESULTS -->
+        <div id="screen-results" class="hidden flex-grow flex flex-col justify-center items-center p-6 text-center overflow-hidden">
+            <div class="text-6xl mb-3 animate-bounce" id="results-mascot">🦉</div>
+            
+            <h2 id="results-title" class="text-2xl font-extrabold text-slate-800 mb-1">Spectacular Job!</h2>
+            <p id="results-subtitle" class="text-slate-500 text-xs mb-4 max-w-sm leading-relaxed">You finished the lesson run! Practice again to master these terms perfectly.</p>
+
+            <!-- PERFECT BONUS BADGE (Shown dynamically if requirements are met) -->
+            <div id="perfect-badge" class="hidden bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs px-4 py-2 rounded-full shadow-lg border border-amber-300 animate-bounce mb-4 uppercase tracking-wider">
+                ✨ PERFECT BONUS +100 XP ✨
+            </div>
+
+            <!-- STATS BOARD (Updated to a clean 3-column grid featuring XP Points) -->
+            <div class="grid grid-cols-3 gap-2.5 w-full max-w-sm mb-6 shrink-0">
+                <!-- Column 1: Score -->
+                <div class="bg-emerald-50 border-2 border-emerald-100 rounded-xl p-2.5 flex flex-col items-center justify-center">
+                    <span class="text-[9px] md:text-[10px] font-bold text-emerald-700 uppercase tracking-wider" id="label-score">Score</span>
+                    <span id="results-score" class="text-base md:text-lg font-black text-emerald-600">0/10</span>
+                </div>
+                <!-- Column 2: Hearts -->
+                <div class="bg-rose-50 border-2 border-rose-100 rounded-xl p-2.5 flex flex-col items-center justify-center">
+                    <span class="text-[9px] md:text-[10px] font-bold text-rose-700 uppercase tracking-wider" id="label-hearts">Hearts</span>
+                    <span id="results-hearts" class="text-base md:text-lg font-black text-rose-600">❤️❤️❤️</span>
+                </div>
+                <!-- Column 3: Dynamic XP Counter -->
+                <div class="bg-amber-50 border-2 border-amber-100 rounded-xl p-2.5 flex flex-col items-center justify-center relative overflow-hidden group">
+                    <span class="text-[9px] md:text-[10px] font-bold text-amber-700 uppercase tracking-wider" id="label-xp">XP</span>
+                    <span id="results-xp" class="text-base md:text-lg font-black text-amber-600">0 XP</span>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="w-full max-w-xs shrink-0">
+                <button onclick="gameEngine.goToDashboard()" class="btn-3d w-full bg-indigo-600 border-b-4 border-indigo-800 text-white py-3.5 rounded-xl font-extrabold shadow-md hover:bg-indigo-500 text-sm">
+                    Back to Lesson Choice
+                </button>
+            </div>
+        </div>
+
+        <!-- CUSTOM STYLED DIALOG POPUP (Replaces browser alerts completely!) -->
+        <div id="custom-dialog" class="hidden absolute inset-0 bg-slate-900/85 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+            <div class="bg-white rounded-3xl w-full max-w-sm p-6 border-b-8 border-indigo-600 shadow-2xl text-center">
+                <span id="dialog-emoji" class="text-4xl block animate-bounce">💡</span>
+                <h3 id="dialog-title" class="text-xl font-black text-slate-800 mt-2">Notice</h3>
+                <p id="dialog-message" class="text-xs text-slate-500 mt-1.5 leading-relaxed font-semibold"></p>
+                <div id="dialog-actions" class="flex gap-3 mt-5">
+                    <!-- Dynamically generated action button -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MAIN CONTROLLER SCRIPT -->
+    <script>
+        const INSTRUCTOR_CONFIG = {
+            classTitle: "Kuyolingo", // Displays at top header
+            
+            // ⚙️ QUESTION TYPE CONTROLLER
+            settings: {
+                allowFindImageQuestion: true,
+                allowNameImageQuestion: true,
+                optionsCount: 4,
+                questionsPerSession: 10,
+                unlockAllLessons: false // 🔓 Toggle to TRUE to bypass all lock checks instantly!
+            },
+
+            // 📚 YOUR 4 LESSON DECKS (Enriched with both English and Spanish translations!)
+            lessons: [
+                {
+                    id: "Elongated syllables",
+                    icon: "📝",
+                    title: "Elongated syllables",
+                    titleEs: "Sílabas alargadas",
+                    description: "Practice enlongated syllables",
+                    descriptionEs: "Practica sílabas alargadas",
+                    locked: false, // 🔓 Active: Ready for Week 1 practice!
+                    cards: [
+                        { word: "-ji", wordEs: "-ji", imageUrl: "https://drive.google.com/file/d/1zQRZowqqXOWQIjUYqb7jXz0alsyPahVw/view?usp=sharing" },
+                        { word: "-yi", wordEs: "-yi", imageUrl: "https://drive.google.com/file/d/1WbfUcUrZzeBcNojtVZgE0wA5yIzBfWO7/view?usp=drive_link" },
+                        { word: "-ta", wordEs: "-ta", imageUrl: "https://drive.google.com/file/d/1GzuTxz926FkPuewgzNpoLia9ukaQD1jN/view?usp=drive_link" },
+                        { word: "-ki", wordEs: "-ki", imageUrl: "https://drive.google.com/file/d/1WElYOMIpKgL7eY_fb307YxpHHZ_d9tlu/view?usp=drive_link" },
+                        { word: "-ne", wordEs: "-ne", imageUrl: "https://drive.google.com/file/d/1XoDdlbshlsgG4BSNaDkp8lexo1cqpNTj/view?usp=drive_link" },
+                        { word: "-nu", wordEs: "-nu", imageUrl: "https://drive.google.com/file/d/1O3p8lrSGBKKZMdQagHQnJaMvCWptt2TV/view?usp=drive_link" },
+                        { word: "-la", wordEs: "-la", imageUrl: "https://drive.google.com/file/d/1CqGBzNSdTd-Ok4cJSg1801z-Q3ST58Bu/view?usp=drive_link" },
+                        { word: "-na", wordEs: "-na", imageUrl: "https://drive.google.com/file/d/1vo35jLP4A_W8FNl1cAFsKivKuc30_Fzo/view?usp=drive_link" },
+                        { word: "-li", wordEs: "-li", imageUrl: "https://drive.google.com/file/d/1FX4vSFijxFnKXyPw8zZtCBTI1HOayMgN/view?usp=drive_link" },
+                        { word: "-le", wordEs: "-le", imageUrl: "https://drive.google.com/file/d/15rTT9E12Riz7mjzchmUiwEkjls4_ON0W/view?usp=drive_link" }
+                    ]
+                },
+                {
+                    id: "Round syllables",
+                    icon: "🍎",
+                    title: "Round syllables",
+                    titleEs: "Sílabas redondas",
+                    description: "Practice round syllables",
+                    descriptionEs: "Practica las silabas redondas",
+                    locked: true, // 🔓 Active: Ready for Week 2 practice!
+                    cards: [
+                        { word: "Strawberry", wordEs: "Fresa", imageUrl: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=300&auto=format&fit=crop" },
+                        { word: "Watermelon", wordEs: "Sandía", imageUrl: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=300&auto=format&fit=crop" },
+                        { word: "Orange", wordEs: "Naranja", imageUrl: "https://images.unsplash.com/photo-1547514701-42782101795e?w=300&auto=format&fit=crop" },
+                        { word: "Pineapple", wordEs: "Piña", imageUrl: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=300&auto=format&fit=crop" },
+                        { word: "Blueberries", wordEs: "Arándanos", imageUrl: "https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?w=300&auto=format&fit=crop" },
+                        { word: "Mango", wordEs: "Mango", imageUrl: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=300&auto=format&fit=crop" }
+                    ]
+                },
+                {
+                    id: "Logogram I",
+                    icon: "🥦",
+                    title: "Logograms I",
+                    titleEs: "Logogramas I",
+                    description: "Practice logograms",
+                    descriptionEs: "Practica logogramas",
+                    locked: true, // 🔒 Locked (Change to false to unlock!)
+                    cards: [
+                        { word: "Broccoli", wordEs: "Brócoli", imageUrl: "https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=300&auto=format&fit=crop" },
+                        { word: "Carrot", wordEs: "Zanahoria", imageUrl: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=300&auto=format&fit=crop" },
+                        { word: "Bell Pepper", wordEs: "Pimiento", imageUrl: "https://images.unsplash.com/photo-1566822497100-aa1e47990426?w=300&auto=format&fit=crop" },
+                        { word: "Tomato", wordEs: "Tomate", imageUrl: "https://images.unsplash.com/photo-1595855759920-86582396756a?w=300&auto=format&fit=crop" },
+                        { word: "Cucumber", wordEs: "Pepino", imageUrl: "https://images.unsplash.com/photo-1449300079324-964320ded52d?w=300&auto=format&fit=crop" },
+                        { word: "Pumpkin", wordEs: "Calabaza", imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&auto=format&fit=crop" }
+                    ]
+                },
+                {
+                    id: "Logogram II",
+                    icon: "🏔️",
+                    title: "Logogram II",
+                    titleEs: "Logogramas II",
+                    description: "Practice logograms",
+                    descriptionEs: "Practica logogramas",
+                    locked: true, // 🔒 Locked (Change to false to unlock!)
+                    cards: [
+                        { word: "Beach", wordEs: "Playa", imageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&auto=format&fit=crop" },
+                        { word: "Forest", wordEs: "Bosque", imageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&auto=format&fit=crop" },
+                        { word: "Mountain", wordEs: "Montaña", imageUrl: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&auto=format&fit=crop" },
+                        { word: "Desert", wordEs: "Desierto", imageUrl: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=300&auto=format&fit=crop" },
+                        { word: "Waterfall", wordEs: "Cascada", imageUrl: "https://images.unsplash.com/photo-1432406186267-3386eb614b4a?w=300&auto=format&fit=crop" },
+                        { word: "City", wordEs: "Ciudad", imageUrl: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=300&auto=format&fit=crop" }
+                    ]
+                }
+            ]
+        };
+
+        // UI Language translation dictionary
+        const TRANSLATIONS = {
+            en: {
+                chooseLesson: "Choose a lesson!",
+                chooseLessonSub: "Select a topic below, then press Start to begin.",
+                startLesson: "Start lesson",
+                whichRepresents: "Which of these glyphs is",
+                whatIsThis: "What glyph is this?",
+                checkAnswer: "Check answer",
+                correct: "Correct!",
+                fantasticWork: "Fantastic work!",
+                youIdentified: "You correctly identified",
+                notQuite: "Not quite!",
+                correctTerm: "The correct glyph is",
+                continue: "Continue",
+                spectacularJob: "Nice job!",
+                excellentJob: "Excellent job!",
+                completedRun: "You completed the lesson! Practice again to master these glyphs perfectly.",
+                terrificEffort: "Terrific effort!",
+                practiceKey: "Practice is the key! Click play again to master these glyphs.",
+                backToLessons: "Back to Lesson Choice",
+                playAgain: "Play again",
+                lessonLocked: "Lesson locked",
+                lockedMessage: "is currently locked! Keep practicing your unlocked lessons. We will release new modules soon!",
+                leaveRunTitle: "Leave run?",
+                leaveRunMsg: "Do you want to exit to the course list? You will lose progress on this study run.",
+                yesQuit: "Yes, quit",
+                cancel: "Cancel",
+                gotIt: "Got it!",
+                score: "Score",
+                hearts: "Hearts",
+                xp: "XP",
+                perfectBonusBadge: "✨ PERFECT LESSON ✨",
+                needMoreCardsTitle: "Need More Cards",
+                needMoreCardsMsg: "This lesson only has {count} cards. You must have at least {options} cards in the lesson to generate multiple-choice options!"
+            },
+            es: {
+                chooseLesson: "¡Elige una lección!",
+                chooseLessonSub: "Selecciona un tema y luego presiona Iniciar para comenzar.",
+                startLesson: "Comenzar lección",
+                whichRepresents: "¿Que glifo representa a",
+                whatIsThis: "¿Qué glifo es este?",
+                checkAnswer: "Comprobar",
+                correct: "¡Correcto!",
+                fantasticWork: "¡Excelente trabajo!",
+                youIdentified: "Identificaste correctamente a",
+                notQuite: "¡Casi!",
+                correctTerm: "El glifo correcto es",
+                continue: "Continuar",
+                spectacularJob: "¡Woooow!",
+                excellentJob: "¡Excelente trabajo!",
+                completedRun: "¡Terminaste la lección! ¡Practica de nuevo para dominar estos glifos a la perfección!",
+                terrificEffort: "¡Muy bien!",
+                practiceKey: "¡La práctica es la clave! Haz clic en jugar de nuevo para dominar estos glifos.",
+                backToLessons: "Volver a las lecciones",
+                playAgain: "Jugar de nuevo",
+                lessonLocked: "Lección bloqueada",
+                lockedMessage: "está bloqueada actualmente. Sigue practicando las lecciones desbloqueadas. ¡Publicaremos mas lecciones pronto!",
+                leaveRunTitle: "¿Salir de la sesión?",
+                leaveRunMsg: "¿Quieres salir a la lista de cursos? Perderás el progreso en esta leccion.",
+                yesQuit: "Sí, salir",
+                cancel: "Cancelar",
+                gotIt: "¡Entendido!",
+                score: "Puntaje",
+                hearts: "Vidas",
+                xp: "Puntos XP",
+                perfectBonusBadge: "✨ ¡LECCIÓN PERFECTA! ✨",
+                needMoreCardsTitle: "Se necesitan más tarjetas",
+                needMoreCardsMsg: "Esta lección solo tiene {count} tarjetas. ¡Debes tener al menos {options} tarjetas en la lección para generar opciones de opción múltiple!"
+            }
+        };
+
+        function cleanGoogleDriveUrl(url) {
+            if (!url) return 'https://placehold.co/150x150/f1f5f9/475569?text=🖼️';
+            
+            const driveStr = url.trim();
+            if (driveStr.includes('drive.google.com')) {
+                const matches = driveStr.match(/\/file\/d\/([^\/]+)/) || driveStr.match(/id=([^&]+)/);
+                if (matches && matches[1]) {
+                    return `https://lh3.googleusercontent.com/d/${matches[1]}`;
+                }
+            }
+            return driveStr;
+        }
+
+        /* ==========================================
+           2. SOUND SYNTHESIS SYSTEM (Classroom Safe!)
+           ========================================== */
+        const playSound = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                if (type === 'success') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); 
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16); 
+                    osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.24); 
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.45);
+                } else if (type === 'error') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(95, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'click') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(580, ctx.currentTime + 0.04);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.04);
+                }
+            } catch (err) {
+                console.warn("Web audio context blocked by browser security context.", err);
+            }
+        };
+
+        /* ==========================================
+           3. CUSTOM POPUP SYSTEM
+           ========================================== */
+        const ui = {
+            alert(message, title = "Oopsy!", emoji = "🦉") {
+                return new Promise((resolve) => {
+                    const dialog = document.getElementById('custom-dialog');
+                    document.getElementById('dialog-emoji').innerText = emoji;
+                    document.getElementById('dialog-title').innerText = title;
+                    document.getElementById('dialog-message').innerText = message;
+                    
+                    const strings = TRANSLATIONS[gameEngine.currentLanguage || 'en'];
+                    const actions = document.getElementById('dialog-actions');
+                    actions.innerHTML = `
+                        <button id="dialog-ok" class="btn-3d w-full bg-indigo-600 border-b-4 border-indigo-800 text-white py-2.5 rounded-2xl font-extrabold shadow-md">
+                            ${strings.gotIt}
+                        </button>
+                    `;
+                    dialog.classList.remove('hidden');
+                    document.getElementById('dialog-ok').onclick = () => {
+                        dialog.classList.add('hidden');
+                        playSound('click');
+                        resolve();
+                    };
+                });
+            },
+            confirm(message, title = "Are you sure?", emoji = "🤔") {
+                return new Promise((resolve) => {
+                    const dialog = document.getElementById('custom-dialog');
+                    document.getElementById('dialog-emoji').innerText = emoji;
+                    document.getElementById('dialog-title').innerText = title;
+                    document.getElementById('dialog-message').innerText = message;
+                    
+                    const strings = TRANSLATIONS[gameEngine.currentLanguage || 'en'];
+                    const actions = document.getElementById('dialog-actions');
+                    actions.innerHTML = `
+                        <button id="dialog-cancel" class="btn-3d flex-1 bg-slate-100 border-b-4 border-slate-300 text-slate-700 py-2.5 rounded-2xl font-bold border border-slate-200">
+                            ${strings.cancel}
+                        </button>
+                        <button id="dialog-confirm" class="btn-3d flex-1 bg-rose-500 border-b-4 border-rose-700 text-white py-2.5 rounded-2xl font-extrabold shadow-md">
+                            ${strings.yesQuit}
+                        </button>
+                    `;
+                    dialog.classList.remove('hidden');
+                    
+                    document.getElementById('dialog-cancel').onclick = () => {
+                        dialog.classList.add('hidden');
+                        playSound('click');
+                        resolve(false);
+                    };
+                    document.getElementById('dialog-confirm').onclick = () => {
+                        dialog.classList.add('hidden');
+                        playSound('click');
+                        resolve(true);
+                    };
+                });
+            }
+        };
+
+        /* ==========================================
+           4. CANVAS PARTICLE ENGINE
+           ========================================== */
+        const canvas = document.getElementById('celebrationCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationFrameId = null;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 3;
+                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`; 
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = Math.random() * -8 - 5;
+                this.gravity = 0.25;
+                this.alpha = 1;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.15;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size, -this.size / 2, this.size * 2, this.size);
+                ctx.restore();
+            }
+            update() {
+                this.x += this.vx;
+                this.vy += this.gravity;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+                this.alpha -= 0.018;
+            }
+        }
+
+        function triggerConfetti() {
+            resizeCanvas();
+            for (let i = 0; i < 30; i++) {
+                particles.push(new Particle(30, canvas.height - 30));
+                particles.push(new Particle(canvas.width - 30, canvas.height - 30));
+            }
+            if (!animationFrameId) {
+                animateParticles();
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = particles.filter(p => p.alpha > 0);
+            
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            if (particles.length > 0) {
+                animationFrameId = requestAnimationFrame(animateParticles);
+            } else {
+                animationFrameId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        /* ==========================================
+           5. GAMEPLAY LOGIC & ENGINE
+           ========================================== */
+        const gameEngine = {
+            currentLanguage: 'en', // default language
+            selectedLesson: null,
+            questions: [],
+            currentIndex: 0,
+            lives: 3,
+            score: 0,
+            selectedOptionIndex: null,
+
+            init() {
+                document.getElementById('header-class-title').innerText = INSTRUCTOR_CONFIG.classTitle;
+                this.updateLanguageUI();
+                this.goToDashboard();
+            },
+
+            // Swaps language state and updates UI texts
+            toggleLanguage() {
+                playSound('click');
+                this.currentLanguage = this.currentLanguage === 'en' ? 'es' : 'en';
+                this.updateLanguageUI();
+                
+                // If dashboard is active, re-render to translate lessons names/descriptions
+                if (!document.getElementById('screen-dashboard').classList.contains('hidden')) {
+                    const prevSelectedId = this.selectedLesson ? this.selectedLesson.id : null;
+                    this.renderLessonCards();
+                    if (prevSelectedId) {
+                        const restoredLesson = INSTRUCTOR_CONFIG.lessons.find(l => l.id === prevSelectedId);
+                        if (restoredLesson) {
+                            this.selectLesson(restoredLesson);
+                        }
+                    }
+                }
+
+                // If gameplay is active, re-render the current question to instantly translate its elements
+                if (!document.getElementById('screen-game').classList.contains('hidden')) {
+                    this.loadQuestion();
+                }
+
+                // If results are active, update the results strings
+                if (!document.getElementById('screen-results').classList.contains('hidden')) {
+                    this.updateResultsLanguage();
+                }
+            },
+
+            // Localizes common interface labels
+            updateLanguageUI() {
+                const label = document.getElementById('lang-label');
+                if (this.currentLanguage === 'en') {
+                    label.innerText = "English";
+                } else {
+                    label.innerText = "Español";
+                }
+
+                const strings = TRANSLATIONS[this.currentLanguage];
+
+                // Dashboard texts
+                document.querySelector('#screen-dashboard h2').innerText = strings.chooseLesson;
+                document.querySelector('#screen-dashboard p').innerText = strings.chooseLessonSub;
+                
+                // Active Action buttons
+                const startBtn = document.getElementById('start-lesson-btn');
+                if (startBtn && startBtn.disabled) {
+                    startBtn.innerText = strings.startLesson;
+                } else if (startBtn) {
+                    startBtn.innerText = strings.startLesson;
+                }
+
+                const checkBtn = document.getElementById('check-btn');
+                if (checkBtn) {
+                    checkBtn.innerText = strings.checkAnswer;
+                }
+            },
+
+            // Helper methods to dynamically read card translations
+            getLocalizedWord(card) {
+                if (this.currentLanguage === 'es' && card.wordEs) {
+                    return card.wordEs;
+                }
+                return card.word;
+            },
+
+            getLocalizedLessonTitle(lesson) {
+                if (this.currentLanguage === 'es' && lesson.titleEs) {
+                    return lesson.titleEs;
+                }
+                return lesson.title;
+            },
+
+            getLocalizedLessonDesc(lesson) {
+                if (this.currentLanguage === 'es' && lesson.descriptionEs) {
+                    return lesson.descriptionEs;
+                }
+                return lesson.description;
+            },
+
+            goToDashboard() {
+                playSound('click');
+                this.selectedLesson = null;
+                
+                const strings = TRANSLATIONS[this.currentLanguage];
+                const startBtn = document.getElementById('start-lesson-btn');
+                startBtn.disabled = true;
+                startBtn.innerText = strings.startLesson;
+                startBtn.className = "btn-3d w-full bg-slate-200 text-slate-400 border-b-4 border-slate-300 cursor-not-allowed py-4 rounded-2xl font-extrabold shadow-md text-center text-sm select-none transition-all";
+
+                document.getElementById('screen-dashboard').classList.remove('hidden');
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('screen-results').classList.add('hidden');
+                
+                this.renderLessonCards();
+            },
+
+            renderLessonCards() {
+                const grid = document.getElementById('lessons-grid');
+                grid.innerHTML = '';
+
+                INSTRUCTOR_CONFIG.lessons.forEach(lesson => {
+                    const isLocked = lesson.locked && !INSTRUCTOR_CONFIG.settings.unlockAllLessons;
+                    const localizedTitle = this.getLocalizedLessonTitle(lesson);
+                    const localizedDesc = this.getLocalizedLessonDesc(lesson);
+                    
+                    const card = document.createElement('div');
+                    card.id = `lesson-card-${lesson.id}`;
+                    
+                    if (isLocked) {
+                        card.className = "flex items-center gap-4 bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl cursor-not-allowed opacity-60 select-none shadow-sm shrink-0";
+                        card.onclick = () => this.showLockedMessage(lesson);
+                    } else {
+                        card.className = "flex items-center gap-4 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-indigo-400 p-4 rounded-2xl cursor-pointer transition-all select-none shadow-sm shrink-0";
+                        card.onclick = () => this.selectLesson(lesson);
+                    }
+                    
+                    const actionIcon = isLocked 
+                        ? `<i class="fa-solid fa-lock text-slate-400 text-sm"></i>`
+                        : `<i class="fa-solid fa-chevron-right text-[10px]"></i>`;
+                    
+                    card.innerHTML = `
+                        <div class="text-3xl ${isLocked ? 'grayscale' : ''}">${lesson.icon}</div>
+                        <div class="flex-grow">
+                            <h3 class="font-extrabold ${isLocked ? 'text-slate-500' : 'text-slate-800'} text-base leading-tight">${localizedTitle}</h3>
+                            <p class="text-slate-400 text-xs font-semibold mt-0.5">${isLocked ? (this.currentLanguage === 'en' ? 'Locked' : 'Bloqueado') : localizedDesc}</p>
+                        </div>
+                        <div class="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-xs ${isLocked ? 'text-slate-400 bg-slate-100' : 'text-indigo-500 bg-slate-50'}">
+                            ${actionIcon}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            },
+
+            showLockedMessage(lesson) {
+                playSound('error');
+                const strings = TRANSLATIONS[this.currentLanguage];
+                const title = this.getLocalizedLessonTitle(lesson);
+                ui.alert(
+                    `"${title}" ${strings.lockedMessage}`,
+                    strings.lessonLocked,
+                    "🔒"
+                );
+            },
+
+            selectLesson(lesson) {
+                playSound('click');
+                
+                INSTRUCTOR_CONFIG.lessons.forEach(l => {
+                    const el = document.getElementById(`lesson-card-${l.id}`);
+                    const isLocked = l.locked && !INSTRUCTOR_CONFIG.settings.unlockAllLessons;
+                    if (el && !isLocked) {
+                        el.className = "flex items-center gap-4 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-indigo-400 p-4 rounded-2xl cursor-pointer transition-all select-none shadow-sm shrink-0";
+                    }
+                });
+
+                this.selectedLesson = lesson;
+                const activeCard = document.getElementById(`lesson-card-${lesson.id}`);
+                if (activeCard) {
+                    activeCard.className = "flex items-center gap-4 bg-indigo-50/50 border-4 border-indigo-500 p-3.5 rounded-2xl cursor-pointer transition-all select-none shadow-md shrink-0";
+                }
+
+                const startBtn = document.getElementById('start-lesson-btn');
+                startBtn.disabled = false;
+                startBtn.className = "btn-3d w-full bg-emerald-500 border-b-4 border-emerald-700 text-white cursor-pointer py-4 rounded-2xl font-extrabold shadow-md text-center text-sm select-none transition-all";
+            },
+
+            confirmStartLesson() {
+                if (!this.selectedLesson) return;
+                
+                const cardsCount = this.selectedLesson.cards.length;
+                const optCount = INSTRUCTOR_CONFIG.settings.optionsCount;
+                if (cardsCount < optCount) {
+                    const strings = TRANSLATIONS[this.currentLanguage];
+                    const errMsg = strings.needMoreCardsMsg
+                        .replace("{count}", cardsCount)
+                        .replace("{options}", optCount);
+                    ui.alert(
+                        errMsg,
+                        strings.needMoreCardsTitle,
+                        "⚙️"
+                    );
+                    return;
+                }
+
+                playSound('click');
+                this.currentIndex = 0;
+                this.lives = 3;
+                this.score = 0;
+                
+                this.questions = this.buildSessionQuestions(
+                    this.selectedLesson.cards, 
+                    INSTRUCTOR_CONFIG.settings.questionsPerSession
+                );
+
+                document.getElementById('screen-dashboard').classList.add('hidden');
+                document.getElementById('screen-game').classList.remove('hidden');
+                this.loadQuestion();
+            },
+
+            restartGame() {
+                this.confirmStartLesson();
+            },
+
+            buildSessionQuestions(cards, maxSessionCount) {
+                const questions = [];
+                const possibleTypes = [];
+                
+                if (INSTRUCTOR_CONFIG.settings.allowFindImageQuestion) possibleTypes.push('FIND_IMAGE');
+                if (INSTRUCTOR_CONFIG.settings.allowNameImageQuestion) possibleTypes.push('NAME_IMAGE');
+
+                if (possibleTypes.length === 0) possibleTypes.push('NAME_IMAGE');
+
+                // Shuffle deck first to ensure random draw of unique cards
+                const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
+                
+                // Limit the session to the actual size of the deck or max count
+                // This guarantees we never test the same card twice in a single run!
+                const totalQuestionsToBuildActual = Math.min(maxSessionCount, shuffledCards.length);
+
+                for (let i = 0; i < totalQuestionsToBuildActual; i++) {
+                    const card = shuffledCards[i];
+                    // Randomly choose question style for this card
+                    const chosenType = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+                    
+                    const options = [card];
+                    const incorrects = cards.filter(c => c.word !== card.word).sort(() => Math.random() - 0.5);
+                    
+                    const neededIncorrects = INSTRUCTOR_CONFIG.settings.optionsCount - 1;
+                    for (let j = 0; j < Math.min(neededIncorrects, incorrects.length); j++) {
+                        options.push(incorrects[j]);
+                    }
+
+                    options.sort(() => Math.random() - 0.5);
+
+                    questions.push({
+                        type: chosenType,
+                        target: card,
+                        options: options
+                    });
+                }
+
+                // Shuffle final game questions order so game modes are randomized
+                return questions.sort(() => Math.random() - 0.5);
+            },
+
+            loadQuestion() {
+                this.selectedOptionIndex = null;
+                const strings = TRANSLATIONS[this.currentLanguage];
+
+                const checkBtn = document.getElementById('check-btn');
+                checkBtn.disabled = true;
+                checkBtn.innerText = strings.checkAnswer;
+                checkBtn.className = "btn-3d w-full bg-slate-200 text-slate-400 border-b-4 border-slate-300 cursor-not-allowed py-3.5 rounded-xl font-extrabold shadow-md text-center text-sm select-none animate-all";
+                
+                const banner = document.getElementById('feedback-banner');
+                banner.classList.add('hidden');
+                banner.classList.remove('slide-up');
+
+                document.getElementById('action-banner').classList.remove('invisible');
+
+                const livesDiv = document.getElementById('lives-container');
+                livesDiv.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const heart = document.createElement('i');
+                    heart.className = i < this.lives ? "fa-solid fa-heart text-rose-500 text-lg animate-bounce" : "fa-regular fa-heart text-slate-300 text-lg";
+                    livesDiv.appendChild(heart);
+                }
+
+                const progressPercent = (this.currentIndex / this.questions.length) * 100;
+                document.getElementById('game-progress').style.width = `${progressPercent}%`;
+
+                // Clears the left and right adaptive columns
+                const leftCol = document.getElementById('game-left-col');
+                const rightCol = document.getElementById('game-right-col');
+                leftCol.innerHTML = '';
+                rightCol.innerHTML = '';
+
+                const q = this.questions[this.currentIndex];
+
+                if (q.type === 'FIND_IMAGE') {
+                    // LEFT COLUMN (Header question details)
+                    const header = document.createElement('div');
+                    header.className = "my-auto flex flex-col items-center justify-center p-4";
+                    
+                    // Question splitted cleanly into two lines on desktop, without icons
+                    header.innerHTML = `
+                        <h3 class="text-2xl md:text-3xl font-black text-slate-800 leading-tight">
+                            <span class="md:block md:mb-2">${strings.whichRepresents}</span>
+                            <span>
+                                <span class="text-indigo-600 underline decoration-indigo-300 decoration-wavy decoration-2">"${this.getLocalizedWord(q.target)}"</span>?
+                            </span>
+                        </h3>
+                    `;
+                    leftCol.appendChild(header);
+
+                    // RIGHT COLUMN (Perfectly squared options container)
+                    const grid = document.createElement('div');
+                    grid.className = "grid grid-cols-2 gap-3.5 max-w-[280px] sm:max-w-[320px] mx-auto w-full flex-grow my-auto items-center justify-center aspect-square shrink-0";
+                    
+                    q.options.forEach((opt, idx) => {
+                        const cell = document.createElement('div');
+                        cell.id = `opt-${idx}`;
+                        cell.onclick = () => this.selectOption(idx);
+                        cell.className = "border-4 border-slate-200 rounded-[24px] bg-white p-0 flex items-center justify-center aspect-square shadow-md cursor-pointer hover:border-indigo-400 transition-all duration-100 select-none overflow-hidden relative w-full";
+                        
+                        const directImg = cleanGoogleDriveUrl(opt.imageUrl);
+                        cell.innerHTML = `
+                            <img src="${directImg}" class="w-full h-full object-contain rounded-2xl bg-white" onerror="this.src='https://placehold.co/200x200/f1f5f9/475569?text=${this.getLocalizedWord(opt)}'"/>
+                        `;
+                        grid.appendChild(cell);
+                    });
+
+                    rightCol.appendChild(grid);
+
+                } else {
+                    // LEFT COLUMN (Header question title + Central adaptive square image container)
+                    const headerContainer = document.createElement('div');
+                    headerContainer.className = "w-full flex flex-col justify-center items-center my-auto";
+                    headerContainer.innerHTML = `
+                        <h3 class="text-2xl md:text-3xl font-black text-slate-800 leading-tight mb-3 shrink-0">${strings.whatIsThis}</h3>
+                    `;
+                    
+                    const previewBox = document.createElement('div');
+                    previewBox.className = "w-52 h-52 md:w-60 md:h-60 mx-auto bg-white border-4 border-indigo-100 rounded-[32px] overflow-hidden flex items-center justify-center shadow-lg relative aspect-square max-h-[190px] md:max-h-[250px] shrink transition-transform hover:scale-[1.02] mb-1";
+                    
+                    const directImg = cleanGoogleDriveUrl(q.target.imageUrl);
+                    previewBox.innerHTML = `
+                        <img src="${directImg}" class="w-full h-full object-contain bg-white rounded-[28px]" onerror="this.src='https://placehold.co/250x250/f1f5f9/475569?text=${this.getLocalizedWord(q.target)}'"/>
+                    `;
+                    headerContainer.appendChild(previewBox);
+                    leftCol.appendChild(headerContainer);
+
+                    // RIGHT COLUMN (Centered 2x2 multi-choice buttons)
+                    const list = document.createElement('div');
+                    list.className = "grid grid-cols-2 gap-3 max-w-md mx-auto w-full my-auto shrink-0";
+
+                    q.options.forEach((opt, idx) => {
+                        const btn = document.createElement('button');
+                        btn.id = `opt-${idx}`;
+                        btn.onclick = () => this.selectOption(idx);
+                        btn.className = "w-full text-left bg-white border-2 border-slate-200 border-b-4 hover:bg-slate-50 py-3.5 px-4 rounded-2xl font-bold text-slate-700 flex items-center gap-2.5 transition-all select-none text-sm md:text-base";
+                        btn.innerHTML = `
+                            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-black border border-slate-200 shrink-0">${idx + 1}</span>
+                            <span class="truncate">${this.getLocalizedWord(opt)}</span>
+                        `;
+                        list.appendChild(btn);
+                    });
+
+                    rightCol.appendChild(list);
+                }
+            },
+
+            selectOption(idx) {
+                playSound('click');
+                const q = this.questions[this.currentIndex];
+                const strings = TRANSLATIONS[this.currentLanguage];
+                
+                q.options.forEach((_, optIdx) => {
+                    const el = document.getElementById(`opt-${optIdx}`);
+                    if (!el) return;
+                    if (q.type === 'FIND_IMAGE') {
+                        el.className = "border-4 border-slate-200 rounded-[24px] bg-white p-0 flex items-center justify-center aspect-square shadow-md cursor-pointer hover:border-indigo-400 transition-all duration-100 select-none overflow-hidden relative w-full";
+                    } else {
+                        el.className = "w-full text-left bg-white border-2 border-slate-200 border-b-4 hover:bg-slate-50 py-3.5 px-4 rounded-2xl font-bold text-slate-700 flex items-center gap-2.5 transition-all select-none text-sm md:text-base";
+                    }
+                });
+
+                this.selectedOptionIndex = idx;
+                const activeEl = document.getElementById(`opt-${idx}`);
+                
+                if (q.type === 'FIND_IMAGE') {
+                    activeEl.className = "border-4 border-indigo-600 rounded-[24px] bg-indigo-50 flex items-center justify-center aspect-square shadow-lg cursor-pointer transition-all duration-100 select-none overflow-hidden relative w-full";
+                } else {
+                    activeEl.className = "w-full text-left bg-indigo-50 border-4 border-indigo-500 hover:bg-indigo-50 py-3 px-4 rounded-2xl font-bold text-indigo-800 flex items-center gap-2.5 transition-all select-none text-sm md:text-base";
+                }
+
+                const checkBtn = document.getElementById('check-btn');
+                checkBtn.disabled = false;
+                checkBtn.innerText = strings.checkAnswer;
+                checkBtn.className = "btn-3d w-full bg-emerald-500 border-b-4 border-emerald-700 text-white cursor-pointer py-3.5 rounded-xl font-extrabold shadow-md text-center text-sm select-none transition-all";
+            },
+
+            checkAnswer() {
+                const q = this.questions[this.currentIndex];
+                const selectedWord = this.getLocalizedWord(q.options[this.selectedOptionIndex]);
+                const correctWord = this.getLocalizedWord(q.target);
+                const isCorrect = (selectedWord === correctWord);
+
+                const strings = TRANSLATIONS[this.currentLanguage];
+                
+                // Hide the regular action button to invisible (keeps layout spacing frozen)
+                document.getElementById('action-banner').classList.add('invisible');
+
+                const banner = document.getElementById('feedback-banner');
+                const icon = document.getElementById('feedback-icon');
+                const title = document.getElementById('feedback-title');
+                const desc = document.getElementById('feedback-desc');
+                const btn = document.getElementById('feedback-btn');
+
+                banner.classList.remove('hidden');
+
+                if (isCorrect) {
+                    this.score++;
+                    playSound('success');
+                    triggerConfetti();
+
+                    // Apply overlayed absolute layout styling + slide-up on mobile, slide-left on desktop
+                    banner.className = "absolute inset-x-0 bottom-0 h-[58%] md:h-full md:w-1/2 md:left-auto md:right-0 md:rounded-l-[36px] md:rounded-r-none p-6 flex flex-col justify-between gap-4 z-30 shadow-[0_-15px_50px_rgba(16,185,129,0.22)] md:shadow-[-15px_0_50px_rgba(16,185,129,0.22)] border-t-4 md:border-t-0 md:border-l-4 bg-emerald-100 border-emerald-300 md:border-emerald-350 text-emerald-900 slide-up md:slide-left";
+                    icon.className = "w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center text-3xl shadow-lg shrink-0 mx-auto animate-bounce";
+                    icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                    
+                    title.innerText = strings.fantasticWork;
+                    desc.innerText = `${strings.youIdentified} "${correctWord}"!`;
+                    
+                    btn.innerText = strings.continue;
+                    btn.className = "btn-3d w-full bg-emerald-500 border-b-4 border-emerald-700 text-white py-4 rounded-2xl font-extrabold shadow-md text-center text-base transition-all shrink-0";
+                    btn.onclick = () => this.advanceQuestion();
+                } else {
+                    this.lives--;
+                    playSound('error');
+
+                    // Apply overlayed absolute layout styling + slide-up on mobile, slide-left on desktop
+                    banner.className = "absolute inset-x-0 bottom-0 h-[58%] md:h-full md:w-1/2 md:left-auto md:right-0 md:rounded-l-[36px] md:rounded-r-none p-6 flex flex-col justify-between gap-4 z-30 shadow-[0_-15px_50px_rgba(244,63,94,0.22)] md:shadow-[-15px_0_50px_rgba(244,63,94,0.22)] border-t-4 md:border-t-0 md:border-l-4 bg-rose-100 border-rose-300 md:border-rose-350 text-rose-900 slide-up md:slide-left";
+                    icon.className = "w-20 h-20 bg-rose-500 text-white rounded-full flex items-center justify-center text-3xl shadow-lg shrink-0 mx-auto";
+                    icon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+                    
+                    title.innerText = strings.notQuite;
+                    desc.innerText = `${strings.correctTerm} "${correctWord}".`;
+
+                    btn.innerText = strings.continue;
+                    btn.className = "btn-3d w-full bg-rose-500 border-b-4 border-rose-700 text-white py-4 rounded-2xl font-extrabold shadow-md text-center text-base transition-all shrink-0";
+                    btn.onclick = () => this.advanceQuestion();
+                }
+            },
+
+            advanceQuestion() {
+                playSound('click');
+                this.currentIndex++;
+
+                if (this.lives <= 0) {
+                    this.finishGame(false);
+                } else if (this.currentIndex >= this.questions.length) {
+                    this.finishGame(true);
+                } else {
+                    this.loadQuestion();
+                }
+            },
+
+            finishGame(isSuccess) {
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('screen-results').classList.remove('hidden');
+
+                const mascot = document.getElementById('results-mascot');
+                const scoreText = document.getElementById('results-score');
+                const heartsText = document.getElementById('results-hearts');
+                const xpText = document.getElementById('results-xp');
+                const badge = document.getElementById('perfect-badge');
+
+                scoreText.innerText = `${this.score}/${this.questions.length}`;
+                
+                let heartsLeftStr = '';
+                for (let i = 0; i < 3; i++) {
+                    heartsLeftStr += i < this.lives ? '❤️' : '🖤';
+                }
+                heartsText.innerText = heartsLeftStr;
+
+                const isPass = this.score >= (this.questions.length / 2);
+                if (isPass) {
+                    mascot.innerText = "🦉🎉";
+                } else {
+                    mascot.innerText = "🦉🩹";
+                }
+
+                this.updateResultsLanguage();
+
+                // DYNAMIC XP POINT CALCULATIONS
+                let baseXp = this.score * 10;
+                let perfectBonus = 0;
+                
+                // If 3 hearts remaining AND got all answers correct, release the 100XP Bonus!
+                if (this.lives === 3 && this.score === this.questions.length && isSuccess) {
+                    perfectBonus = 100;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                let totalXp = baseXp + perfectBonus;
+
+                // Animated XP point counter increments
+                let currentXp = 0;
+                xpText.innerText = "0 XP";
+                
+                if (totalXp > 0) {
+                    const stepDuration = Math.max(Math.floor(1000 / totalXp), 15);
+                    const timer = setInterval(() => {
+                        currentXp += 2;
+                        if (currentXp >= totalXp) {
+                            currentXp = totalXp;
+                            clearInterval(timer);
+                            if (perfectBonus > 0) {
+                                triggerConfetti();
+                                playSound('success');
+                            }
+                        }
+                        xpText.innerText = `${currentXp} XP`;
+                    }, stepDuration);
+                }
+            },
+
+            updateResultsLanguage() {
+                const strings = TRANSLATIONS[this.currentLanguage];
+                const title = document.getElementById('results-title');
+                const sub = document.getElementById('results-subtitle');
+                const btnDashboard = document.querySelector('#screen-results button[onclick="gameEngine.goToDashboard()"]');
+                
+                // Labels
+                const scoreLabel = document.getElementById('label-score');
+                const heartsLabel = document.getElementById('label-hearts');
+                const xpLabel = document.getElementById('label-xp');
+                const badge = document.getElementById('perfect-badge');
+
+                if (scoreLabel) scoreLabel.innerText = strings.score;
+                if (heartsLabel) heartsLabel.innerText = strings.hearts;
+                if (xpLabel) xpLabel.innerText = strings.xp;
+                if (badge) badge.innerText = strings.perfectBonusBadge;
+
+                if (btnDashboard) btnDashboard.innerText = strings.backToLessons;
+
+                const isPass = this.score >= (this.questions.length / 2);
+                if (isPass) {
+                    title.innerText = strings.excellentJob;
+                    sub.innerText = strings.completedRun;
+                } else {
+                    title.innerText = strings.terrificEffort;
+                    sub.innerText = strings.practiceKey;
+                }
+            },
+
+            async quitGame() {
+                const strings = TRANSLATIONS[this.currentLanguage];
+                const confirmed = await ui.confirm(
+                    strings.leaveRunMsg,
+                    strings.leaveRunTitle,
+                    "🤔"
+                );
+                if (confirmed) {
+                    this.goToDashboard();
+                }
+            }
+        };
+
+        window.onload = function() {
+            gameEngine.init();
+            resizeCanvas();
+        };
+
+    </script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
